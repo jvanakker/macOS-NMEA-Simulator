@@ -1,0 +1,36 @@
+# NMEA Simulator
+
+A simple SwiftUI macOS app that simulates a GPS source over TCP by streaming NMEA 0183 sentences.
+
+Clients can connect to the configured local IP and port to receive live simulated GPS output (`GPRMC` and `GPGGA`).
+
+## What It Does
+
+- Runs a TCP server for NMEA clients
+- Sends periodic GPS sentences at a configurable rate
+- Lets you set latitude, longitude, altitude, speed, and course
+- Supports optional movement simulation
+- Includes a map dialog to set/reset start position
+
+## Requirements
+
+- macOS
+- Xcode 15+ (or newer)
+
+## Run
+
+1. Open `NMEA Simulator.xcodeproj` in Xcode.
+2. Select the `NMEA Simulator` scheme.
+3. Build and run on macOS.
+
+## Basic Usage
+
+1. Set network and GPS values in the app.
+2. Click **Start Server**.
+3. Connect your NMEA client to `<local-ip>:<port>`.
+4. Watch incoming NMEA sentences in your client (and optionally in the app log).
+
+## Notes
+
+- The app listens on all interfaces (`0.0.0.0`) and displays the active local IP for convenience.
+- Network client/server entitlements are enabled for sandboxed macOS execution.
