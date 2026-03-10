@@ -16,6 +16,8 @@ struct NMEASimulatorConfiguration {
     let altitudeMeters: Double
     let speedKilometersPerHour: Double
     let courseDegrees: Double
+    let climbRateMetersPerSecond: Double
+    let turnRateDegreesPerSecond: Double
     let movementEnabled: Bool
 }
 
@@ -25,6 +27,8 @@ struct SimulatedGPSState {
     var altitudeMeters: Double
     var speedKilometersPerHour: Double
     var courseDegrees: Double
+    var climbRateMetersPerSecond: Double = 0
+    var turnRateDegreesPerSecond: Double = 0
     var timestamp: Date
     var fixQuality: Int = 1
     var satellitesInUse: Int = 10
@@ -32,7 +36,19 @@ struct SimulatedGPSState {
 
     mutating func advance(seconds: TimeInterval, movementEnabled: Bool) {
         timestamp = timestamp.addingTimeInterval(seconds)
-        guard movementEnabled, speedKilometersPerHour > 0 else {
+        guard movementEnabled else {
+            return
+        }
+
+        courseDegrees += turnRateDegreesPerSecond * seconds
+        courseDegrees.formTruncatingRemainder(dividingBy: 360.0)
+        if courseDegrees < 0 {
+            courseDegrees += 360.0
+        }
+
+        altitudeMeters += climbRateMetersPerSecond * seconds
+
+        guard speedKilometersPerHour > 0 else {
             return
         }
 
@@ -102,9 +118,24 @@ enum NMEASentenceGenerator {
 
     private static func formatCoordinate(_ value: Double, isLatitude: Bool) -> (value: String, direction: String) {
         let absolute = abs(value)
-        let degrees = Int(absolute)
+        var degrees = Int(absolute)
         let minutes = (absolute - Double(degrees)) * 60.0
-        let minuteComponent = String(format: "%07.4f", locale: Locale(identifier: "en_US_POSIX"), minutes)
+        var minuteScaled = Int((minutes * 10_000).rounded())
+
+        // Handle rounding rollover (e.g. 59.99995 -> 60.0000).
+        if minuteScaled >= 600_000 {
+            minuteScaled = 0
+            degrees += 1
+        }
+
+        let minuteWhole = minuteScaled / 10_000
+        let minuteFraction = minuteScaled % 10_000
+        let minuteComponent = String(
+            format: "%02d.%04d",
+            locale: Locale(identifier: "en_US_POSIX"),
+            minuteWhole,
+            minuteFraction
+        )
 
         if isLatitude {
             let direction = value >= 0 ? "N" : "S"

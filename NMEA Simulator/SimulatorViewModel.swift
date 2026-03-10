@@ -40,6 +40,7 @@ final class SimulatorViewModel: ObservableObject {
     private var lastTickDate: Date?
     private var sentenceLoggingEnabled = false
     private var movementEnabled = false
+    private var runtimeRateHz = 1.0
 
     init() {
         self.server = TCPServerService()
@@ -97,9 +98,12 @@ final class SimulatorViewModel: ObservableObject {
             altitudeMeters: configuration.altitudeMeters,
             speedKilometersPerHour: configuration.speedKilometersPerHour,
             courseDegrees: configuration.courseDegrees,
+            climbRateMetersPerSecond: configuration.climbRateMetersPerSecond,
+            turnRateDegreesPerSecond: configuration.turnRateDegreesPerSecond,
             timestamp: Date()
         )
         movementEnabled = configuration.movementEnabled
+        runtimeRateHz = configuration.rateHz
         sentencesSent = 0
         isRunning = true
         lastTickDate = Date()
@@ -126,6 +130,7 @@ final class SimulatorViewModel: ObservableObject {
         lastTickDate = nil
         state = nil
         movementEnabled = false
+        runtimeRateHz = 1.0
         appendLog("Server stopped.")
     }
 
@@ -140,11 +145,15 @@ final class SimulatorViewModel: ObservableObject {
     func updateRuntimeControls(
         movementEnabled: Bool,
         speedKilometersPerHour: Double,
-        courseDegrees: Double
+        courseDegrees: Double,
+        climbRateMetersPerSecond: Double,
+        turnRateDegreesPerSecond: Double
     ) {
         self.movementEnabled = movementEnabled
         state?.speedKilometersPerHour = speedKilometersPerHour
         state?.courseDegrees = courseDegrees
+        state?.climbRateMetersPerSecond = climbRateMetersPerSecond
+        state?.turnRateDegreesPerSecond = turnRateDegreesPerSecond
     }
 
     func updateRuntimePosition(
@@ -157,10 +166,19 @@ final class SimulatorViewModel: ObservableObject {
         state?.altitudeMeters = altitudeMeters
     }
 
+    func updateRuntimeRateHz(_ rateHz: Double) {
+        guard isRunning else { return }
+        runtimeRateHz = rateHz
+        startTicker()
+    }
+
     private func startTicker() {
-        guard let configuration = activeConfiguration else { return }
-        let intervalSeconds = max(0.05, 1.0 / configuration.rateHz)
+        guard activeConfiguration != nil else { return }
+        tickerTask?.cancel()
+        tickerTask = nil
+        let intervalSeconds = max(0.05, 1.0 / max(0.01, runtimeRateHz))
         let sleepNanoseconds = UInt64(intervalSeconds * 1_000_000_000)
+        lastTickDate = Date()
 
         tickerTask = Task { [weak self] in
             guard let self else { return }

@@ -13,5 +13,6 @@ struct NMEA_SimulatorApp: App {
         WindowGroup {
             ContentView()
         }
+        .defaultSize(width: 640, height: 520)
     }
 }
