@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		3A975DC22F61875300BA8179 /* README.mdown in Resources */ = {isa = PBXBuildFile; fileRef = 3A975DC12F61875300BA8179 /* README.mdown */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		3A1CD8482F60608C0007AB76 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +31,7 @@
 		3A1CD8382F60608A0007AB76 /* NMEA Simulator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "NMEA Simulator.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		3A1CD8472F60608C0007AB76 /* NMEA SimulatorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "NMEA SimulatorTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		3A1CD8512F60608C0007AB76 /* NMEA SimulatorUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "NMEA SimulatorUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		3A975DC12F61875300BA8179 /* README.mdown */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.mdown; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -75,6 +80,7 @@
 		3A1CD82F2F60608A0007AB76 = {
 			isa = PBXGroup;
 			children = (
+				3A975DC12F61875300BA8179 /* README.mdown */,
 				3A1CD83A2F60608A0007AB76 /* NMEA Simulator */,
 				3A1CD84A2F60608C0007AB76 /* NMEA SimulatorTests */,
 				3A1CD8542F60608C0007AB76 /* NMEA SimulatorUITests */,
@@ -212,6 +218,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3A975DC22F61875300BA8179 /* README.mdown in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

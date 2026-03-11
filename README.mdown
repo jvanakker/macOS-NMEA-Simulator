@@ -4,6 +4,8 @@ A simple SwiftUI macOS app that simulates a GPS source over TCP by streaming NME
 
 Clients can connect to the configured local IP and port to receive live simulated GPS output (`GPRMC` and `GPGGA`).
 
+![Alt text](/screenshot.png?raw=true "NMEA Simulator for macOS")
+
 ## What It Does
 
 - Runs a TCP server for NMEA clients
