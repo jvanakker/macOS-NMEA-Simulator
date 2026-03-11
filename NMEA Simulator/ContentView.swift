@@ -23,6 +23,7 @@ struct ContentView: View {
     private static let defaultLatitude = 52.0907
     private static let defaultLongitude = 5.1214
 
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var viewModel = SimulatorViewModel()
 
     @AppStorage("sim.port") private var port = 10110
@@ -62,7 +63,7 @@ struct ContentView: View {
                         .help("Start the TCP NMEA server")
 
                         Button {
-                            viewModel.stop()
+                            stopServer()
                         } label: {
                             Label("Stop Server", systemImage: "stop.fill")
                         }
@@ -115,6 +116,30 @@ struct ContentView: View {
                 .onChange(of: turnRateDegreesPerSecond) { _, _ in
                     applyRuntimeSettingsIfNeeded()
                 }
+                .onChange(of: viewModel.currentCourseDegrees) { _, newValue in
+                    guard viewModel.isRunning, isMoving, abs(turnRateDegreesPerSecond) > 0.0001 else {
+                        return
+                    }
+                    courseDegrees = min(360, max(0, newValue))
+                }
+                .onChange(of: viewModel.currentLatitude) { _, newValue in
+                    guard viewModel.isRunning, isMoving else {
+                        return
+                    }
+                    latitude = min(90.0, max(-90.0, newValue))
+                }
+                .onChange(of: viewModel.currentLongitude) { _, newValue in
+                    guard viewModel.isRunning, isMoving else {
+                        return
+                    }
+                    longitude = min(180.0, max(-180.0, newValue))
+                }
+                .onChange(of: viewModel.currentAltitudeMeters) { _, newValue in
+                    guard viewModel.isRunning, isMoving else {
+                        return
+                    }
+                    altitudeMeters = newValue
+                }
                 .onChange(of: latitude) { _, _ in
                     applyRuntimePositionIfNeeded()
                 }
@@ -124,8 +149,14 @@ struct ContentView: View {
                 .onChange(of: altitudeMeters) { _, _ in
                     applyRuntimePositionIfNeeded()
                 }
+                .onChange(of: scenePhase) { _, newPhase in
+                    guard newPhase != .active else {
+                        return
+                    }
+                    persistRuntimeStateIfNeeded()
+                }
                 .onDisappear {
-                    viewModel.stop()
+                    stopServer()
                 }
         )
 
@@ -401,6 +432,22 @@ struct ContentView: View {
             longitude: min(180.0, max(-180.0, longitude)),
             altitudeMeters: altitudeMeters
         )
+    }
+
+    private func persistRuntimeStateIfNeeded() {
+        guard viewModel.isRunning else {
+            return
+        }
+
+        latitude = min(90.0, max(-90.0, viewModel.currentLatitude))
+        longitude = min(180.0, max(-180.0, viewModel.currentLongitude))
+        altitudeMeters = viewModel.currentAltitudeMeters
+        courseDegrees = min(360.0, max(0.0, viewModel.currentCourseDegrees))
+    }
+
+    private func stopServer() {
+        persistRuntimeStateIfNeeded()
+        viewModel.stop()
     }
 
     private var currentStartCoordinate: CLLocationCoordinate2D {

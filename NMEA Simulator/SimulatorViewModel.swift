@@ -31,6 +31,10 @@ final class SimulatorViewModel: ObservableObject {
     @Published private(set) var statusText = "Stopped"
     @Published private(set) var clientCount = 0
     @Published private(set) var sentencesSent = 0
+    @Published private(set) var currentLatitude = 0.0
+    @Published private(set) var currentLongitude = 0.0
+    @Published private(set) var currentAltitudeMeters = 0.0
+    @Published private(set) var currentCourseDegrees = 0.0
     @Published private(set) var logEntries: [SimulatorLogEntry] = []
 
     private let server: TCPServerService
@@ -102,6 +106,10 @@ final class SimulatorViewModel: ObservableObject {
             turnRateDegreesPerSecond: configuration.turnRateDegreesPerSecond,
             timestamp: Date()
         )
+        currentLatitude = configuration.latitude
+        currentLongitude = configuration.longitude
+        currentAltitudeMeters = configuration.altitudeMeters
+        currentCourseDegrees = configuration.courseDegrees
         movementEnabled = configuration.movementEnabled
         runtimeRateHz = configuration.rateHz
         sentencesSent = 0
@@ -129,6 +137,7 @@ final class SimulatorViewModel: ObservableObject {
         activeConfiguration = nil
         lastTickDate = nil
         state = nil
+        currentCourseDegrees = 0
         movementEnabled = false
         runtimeRateHz = 1.0
         appendLog("Server stopped.")
@@ -152,6 +161,7 @@ final class SimulatorViewModel: ObservableObject {
         self.movementEnabled = movementEnabled
         state?.speedKilometersPerHour = speedKilometersPerHour
         state?.courseDegrees = courseDegrees
+        currentCourseDegrees = courseDegrees
         state?.climbRateMetersPerSecond = climbRateMetersPerSecond
         state?.turnRateDegreesPerSecond = turnRateDegreesPerSecond
     }
@@ -164,6 +174,9 @@ final class SimulatorViewModel: ObservableObject {
         state?.latitude = latitude
         state?.longitude = longitude
         state?.altitudeMeters = altitudeMeters
+        currentLatitude = latitude
+        currentLongitude = longitude
+        currentAltitudeMeters = altitudeMeters
     }
 
     func updateRuntimeRateHz(_ rateHz: Double) {
@@ -197,6 +210,10 @@ final class SimulatorViewModel: ObservableObject {
         lastTickDate = now
         state.advance(seconds: elapsed, movementEnabled: movementEnabled)
         self.state = state
+        currentLatitude = state.latitude
+        currentLongitude = state.longitude
+        currentAltitudeMeters = state.altitudeMeters
+        currentCourseDegrees = state.courseDegrees
 
         let payload = NMEASentenceGenerator.sentences(from: state).joined()
         server.broadcast(payload)
