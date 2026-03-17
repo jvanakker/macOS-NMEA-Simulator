@@ -18,6 +18,9 @@ struct NMEASimulatorConfiguration {
     let courseDegrees: Double
     let climbRateMetersPerSecond: Double
     let turnRateDegreesPerSecond: Double
+    let windSimulationEnabled: Bool
+    let windSpeedKilometersPerHour: Double
+    let windDirectionFromDegrees: Double
     let movementEnabled: Bool
 }
 
@@ -29,6 +32,9 @@ struct SimulatedGPSState {
     var courseDegrees: Double
     var climbRateMetersPerSecond: Double = 0
     var turnRateDegreesPerSecond: Double = 0
+    var windSimulationEnabled: Bool = false
+    var windSpeedKilometersPerHour: Double = 0
+    var windDirectionFromDegrees: Double = 0
     var timestamp: Date
     var fixQuality: Int = 1
     var satellitesInUse: Int = 10
@@ -48,16 +54,31 @@ struct SimulatedGPSState {
 
         altitudeMeters += climbRateMetersPerSecond * seconds
 
-        guard speedKilometersPerHour > 0 else {
-            return
+        var northMeters = 0.0
+        var eastMeters = 0.0
+
+        if speedKilometersPerHour > 0 {
+            let metersPerSecond = speedKilometersPerHour / 3.6
+            let distanceMeters = metersPerSecond * seconds
+            let courseRadians = courseDegrees * .pi / 180.0
+
+            northMeters += cos(courseRadians) * distanceMeters
+            eastMeters += sin(courseRadians) * distanceMeters
         }
 
-        let metersPerSecond = speedKilometersPerHour / 3.6
-        let distanceMeters = metersPerSecond * seconds
-        let courseRadians = courseDegrees * .pi / 180.0
+        if windSimulationEnabled, windSpeedKilometersPerHour > 0 {
+            let windToDegrees = normalizedDegrees(windDirectionFromDegrees + 180.0)
+            let windRadians = windToDegrees * .pi / 180.0
+            let windMetersPerSecond = windSpeedKilometersPerHour / 3.6
+            let windDistanceMeters = windMetersPerSecond * seconds
 
-        let northMeters = cos(courseRadians) * distanceMeters
-        let eastMeters = sin(courseRadians) * distanceMeters
+            northMeters += cos(windRadians) * windDistanceMeters
+            eastMeters += sin(windRadians) * windDistanceMeters
+        }
+
+        guard abs(northMeters) > .leastNonzeroMagnitude || abs(eastMeters) > .leastNonzeroMagnitude else {
+            return
+        }
 
         latitude += northMeters / 111_320.0
         let metersPerLongitudeDegree = max(1.0, cos(latitude * .pi / 180.0) * 111_320.0)
@@ -69,6 +90,14 @@ struct SimulatedGPSState {
         } else if longitude < -180.0 {
             longitude += 360.0
         }
+    }
+
+    private func normalizedDegrees(_ value: Double) -> Double {
+        var normalized = value.truncatingRemainder(dividingBy: 360.0)
+        if normalized < 0 {
+            normalized += 360.0
+        }
+        return normalized
     }
 }
 

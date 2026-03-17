@@ -104,6 +104,9 @@ final class SimulatorViewModel: ObservableObject {
             courseDegrees: configuration.courseDegrees,
             climbRateMetersPerSecond: configuration.climbRateMetersPerSecond,
             turnRateDegreesPerSecond: configuration.turnRateDegreesPerSecond,
+            windSimulationEnabled: configuration.windSimulationEnabled,
+            windSpeedKilometersPerHour: configuration.windSpeedKilometersPerHour,
+            windDirectionFromDegrees: configuration.windDirectionFromDegrees,
             timestamp: Date()
         )
         currentLatitude = configuration.latitude
@@ -156,7 +159,10 @@ final class SimulatorViewModel: ObservableObject {
         speedKilometersPerHour: Double,
         courseDegrees: Double,
         climbRateMetersPerSecond: Double,
-        turnRateDegreesPerSecond: Double
+        turnRateDegreesPerSecond: Double,
+        windSimulationEnabled: Bool,
+        windSpeedKilometersPerHour: Double,
+        windDirectionFromDegrees: Double
     ) {
         self.movementEnabled = movementEnabled
         state?.speedKilometersPerHour = speedKilometersPerHour
@@ -164,6 +170,9 @@ final class SimulatorViewModel: ObservableObject {
         currentCourseDegrees = courseDegrees
         state?.climbRateMetersPerSecond = climbRateMetersPerSecond
         state?.turnRateDegreesPerSecond = turnRateDegreesPerSecond
+        state?.windSimulationEnabled = windSimulationEnabled
+        state?.windSpeedKilometersPerHour = windSpeedKilometersPerHour
+        state?.windDirectionFromDegrees = windDirectionFromDegrees
     }
 
     func updateRuntimePosition(

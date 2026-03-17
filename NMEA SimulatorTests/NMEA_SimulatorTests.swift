@@ -76,6 +76,26 @@ struct NMEA_SimulatorTests {
         #expect(state.courseDegrees == 30.0)
     }
 
+    @Test func advanceAppliesWindOffsetWhenEnabled() async throws {
+        var state = SimulatedGPSState(
+            latitude: 0.0,
+            longitude: 0.0,
+            altitudeMeters: 0.0,
+            speedKilometersPerHour: 0.0,
+            courseDegrees: 0.0,
+            windSimulationEnabled: true,
+            windSpeedKilometersPerHour: 36.0,
+            windDirectionFromDegrees: 0.0,
+            timestamp: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+
+        state.advance(seconds: 1.0, movementEnabled: true)
+
+        let expectedLatitude = -10.0 / 111_320.0
+        #expect(abs(state.latitude - expectedLatitude) < 0.000000001)
+        #expect(abs(state.longitude) < 0.000000001)
+    }
+
     private func sentenceFields(_ sentence: String) -> [String] {
         sentence
             .trimmingCharacters(in: .whitespacesAndNewlines)

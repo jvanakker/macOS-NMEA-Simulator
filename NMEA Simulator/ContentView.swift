@@ -35,6 +35,9 @@ struct ContentView: View {
     @AppStorage("sim.courseDegrees") private var courseDegrees = 0.0
     @AppStorage("sim.climbRateMetersPerSecond") private var climbRateMetersPerSecond = 0.0
     @AppStorage("sim.turnRateDegreesPerSecond") private var turnRateDegreesPerSecond = 0.0
+    @AppStorage("sim.windSimulationEnabled") private var windSimulationEnabled = false
+    @AppStorage("sim.windSpeedKilometersPerHour") private var windSpeedKilometersPerHour = 0.0
+    @AppStorage("sim.windDirectionFromDegrees") private var windDirectionFromDegrees = 0.0
     @AppStorage("sim.isMoving") private var isMoving = false
     @AppStorage("sim.showSentencesInLog") private var showSentencesInLog = false
 
@@ -89,7 +92,7 @@ struct ContentView: View {
                 }
         )
 
-        let observedView = AnyView(
+        let withLifecycleObservers = AnyView(
             baseView
                 .onAppear {
                     refreshLocalIPAddress()
@@ -98,6 +101,19 @@ struct ContentView: View {
                 .onChange(of: showSentencesInLog) { _, newValue in
                     viewModel.setSentenceLoggingEnabled(newValue)
                 }
+                .onChange(of: scenePhase) { _, newPhase in
+                    guard newPhase != .active else {
+                        return
+                    }
+                    persistRuntimeStateIfNeeded()
+                }
+                .onDisappear {
+                    stopServer()
+                }
+        )
+
+        let withRuntimeControlObservers = AnyView(
+            withLifecycleObservers
                 .onChange(of: rateHz) { _, _ in
                     applyRuntimeRateIfNeeded()
                 }
@@ -116,6 +132,19 @@ struct ContentView: View {
                 .onChange(of: turnRateDegreesPerSecond) { _, _ in
                     applyRuntimeSettingsIfNeeded()
                 }
+                .onChange(of: windSimulationEnabled) { _, _ in
+                    applyRuntimeSettingsIfNeeded()
+                }
+                .onChange(of: windSpeedKilometersPerHour) { _, _ in
+                    applyRuntimeSettingsIfNeeded()
+                }
+                .onChange(of: windDirectionFromDegrees) { _, _ in
+                    applyRuntimeSettingsIfNeeded()
+                }
+        )
+
+        let observedView = AnyView(
+            withRuntimeControlObservers
                 .onChange(of: viewModel.currentCourseDegrees) { _, newValue in
                     guard viewModel.isRunning, isMoving, abs(turnRateDegreesPerSecond) > 0.0001 else {
                         return
@@ -148,15 +177,6 @@ struct ContentView: View {
                 }
                 .onChange(of: altitudeMeters) { _, _ in
                     applyRuntimePositionIfNeeded()
-                }
-                .onChange(of: scenePhase) { _, newPhase in
-                    guard newPhase != .active else {
-                        return
-                    }
-                    persistRuntimeStateIfNeeded()
-                }
-                .onDisappear {
-                    stopServer()
                 }
         )
 
@@ -287,6 +307,19 @@ struct ContentView: View {
                         .multilineTextAlignment(.trailing)
                         .frame(width: 170)
                 }
+                Toggle("Simulate Wind", isOn: $windSimulationEnabled)
+                if windSimulationEnabled {
+                    settingRow("Wind Speed (km/h)") {
+                        TextField("", value: $windSpeedKilometersPerHour, format: .number.precision(.fractionLength(1...2)))
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 170)
+                    }
+                    settingRow("Wind From (degrees)") {
+                        TextField("", value: $windDirectionFromDegrees, format: .number.precision(.fractionLength(1...2)))
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 170)
+                    }
+                }
             }
         }
     }
@@ -379,6 +412,12 @@ struct ContentView: View {
         guard (0.0...360.0).contains(courseDegrees) else {
             throw SimulatorConfigurationError.invalid("Course must be between 0 and 360 degrees.")
         }
+        guard windSpeedKilometersPerHour >= 0 else {
+            throw SimulatorConfigurationError.invalid("Wind speed cannot be negative.")
+        }
+        guard (0.0...360.0).contains(windDirectionFromDegrees) else {
+            throw SimulatorConfigurationError.invalid("Wind direction must be between 0 and 360 degrees.")
+        }
 
         return NMEASimulatorConfiguration(
             host: "0.0.0.0",
@@ -391,6 +430,9 @@ struct ContentView: View {
             courseDegrees: courseDegrees == 360 ? 0 : courseDegrees,
             climbRateMetersPerSecond: climbRateMetersPerSecond,
             turnRateDegreesPerSecond: turnRateDegreesPerSecond,
+            windSimulationEnabled: windSimulationEnabled,
+            windSpeedKilometersPerHour: windSpeedKilometersPerHour,
+            windDirectionFromDegrees: windDirectionFromDegrees == 360 ? 0 : windDirectionFromDegrees,
             movementEnabled: isMoving
         )
     }
@@ -408,7 +450,10 @@ struct ContentView: View {
             speedKilometersPerHour: max(0, speedKilometersPerHour),
             courseDegrees: courseDegrees == 360 ? 0 : min(360, max(0, courseDegrees)),
             climbRateMetersPerSecond: climbRateMetersPerSecond,
-            turnRateDegreesPerSecond: turnRateDegreesPerSecond
+            turnRateDegreesPerSecond: turnRateDegreesPerSecond,
+            windSimulationEnabled: windSimulationEnabled,
+            windSpeedKilometersPerHour: max(0, windSpeedKilometersPerHour),
+            windDirectionFromDegrees: windDirectionFromDegrees == 360 ? 0 : min(360, max(0, windDirectionFromDegrees))
         )
     }
 
